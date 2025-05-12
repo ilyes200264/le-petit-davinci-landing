@@ -74,7 +74,7 @@ const App = () => {
             <div className="relative w-64 h-96">
               {/* Phone frame with app screenshot */}
               <div className="absolute inset-0 bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border-8 border-gray-800">
-                <img src="https://via.placeholder.com/300x600" alt="Le Petit DaVinci App" className="w-full h-full object-cover" />
+                <img src="/Capture d'écran 2025-05-11 202942.png" alt="Le Petit DaVinci App" className="w-full h-full object-cover" />
               </div>
               {/* Floating elements */}
               <div className="absolute -top-4 -right-4 bg-purple-100 rounded-lg p-2 shadow-md rotate-6">
@@ -168,7 +168,7 @@ const App = () => {
                   </div>
                   <div className="md:w-1/2 flex justify-center">
                     <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="https://via.placeholder.com/240x400" alt="Module d'apprentissage" className="w-full h-full object-cover" />
+                      <img src="/Capture d'écran 2025-05-11 202956.png" alt="Module d'apprentissage" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
@@ -213,7 +213,7 @@ const App = () => {
                   </div>
                   <div className="md:w-1/2 flex justify-center">
                     <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="https://via.placeholder.com/240x400" alt="Exercices interactifs" className="w-full h-full object-cover" />
+                      <img src="/Capture d'écran 2025-05-11 203034.png" alt="Exercices interactifs" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
@@ -258,7 +258,7 @@ const App = () => {
                   </div>
                   <div className="md:w-1/2 flex justify-center">
                     <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="https://via.placeholder.com/240x400" alt="Suivi des progrès" className="w-full h-full object-cover" />
+                      <img src="/Capture d'écran 2025-05-11 203216.png" alt="Suivi des progrès" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
@@ -303,7 +303,7 @@ const App = () => {
                   </div>
                   <div className="md:w-1/2 flex justify-center">
                     <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="https://via.placeholder.com/240x400" alt="Jeux éducatifs" className="w-full h-full object-cover" />
+                      <img src="/Capture d'écran 2025-05-11 203246.png" alt="Jeux éducatifs" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
@@ -388,10 +388,16 @@ const App = () => {
           </div>
 
           <div className="flex flex-nowrap overflow-x-auto pb-8 gap-6 max-w-5xl mx-auto">
-            {[1, 2, 3, 4, 5].map((index) => (
+            {[
+              "/Capture d'écran 2025-05-11 203355.png",
+              "/Capture d'écran 2025-05-11 203526.png",
+              "/Capture d'écran 2025-05-11 203635.png",
+              "/Capture d'écran 2025-05-11 202942.png",
+              "/Capture d'écran 2025-05-11 202956.png"
+            ].map((src, index) => (
               <div key={index} className="flex-none w-64">
                 <div className="border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                  <img src={`https://via.placeholder.com/240x480`} alt={`Screenshot ${index}`} className="w-full h-full object-cover" />
+                  <img src={src} alt={`Screenshot ${index+1}`} className="w-full h-full object-cover" />
                 </div>
               </div>
             ))}
