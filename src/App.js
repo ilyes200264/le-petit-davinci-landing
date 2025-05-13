@@ -1,634 +1,945 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, Star, Book, Gamepad, Award, BarChart2, Download, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ChevronRight,
+  Star,
+  Book,
+  Gamepad,
+  Award,
+  BarChart2,
+  Download,
+  Menu,
+  X,
+  ChevronDown,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
+// Data for the features slideshow
+const featuresSlidesData = [
+  {
+    id: "apprendre",
+    title: "Modules d'apprentissage interactifs",
+    description:
+      "Des leçons structurées pour acquérir des connaissances fondamentales en:",
+    items: [
+      {
+        icon: "A",
+        text: "Alphabet et prononciation",
+        subtext: "Apprentissage des lettres avec sons et animations.",
+        colorName: "purple",
+      },
+      {
+        icon: "V",
+        text: "Vocabulaire thématique",
+        subtext:
+          "Acquisition de vocabulaire par thèmes (animaux, couleurs, etc.).",
+        colorName: "orange",
+      },
+      {
+        icon: "M",
+        text: "Mathématiques",
+        subtext: "Opérations de base, comptage et reconnaissance des formes.",
+        colorName: "green",
+      },
+    ],
+    image: "/feature-learn-module.png",
+    alt: "Module d'apprentissage",
+  },
+  {
+    id: "pratiquer",
+    title: "Exercices interactifs",
+    description: "Renforcez les connaissances avec des exercices engageants:",
+    items: [
+      {
+        icon: "D",
+        text: "Dictées interactives",
+        subtext: "Exercices audio de dictée avec assistance visuelle.",
+        colorName: "blue",
+      },
+      {
+        icon: "A",
+        text: "Association d'images",
+        subtext: "Association d'images avec mots ou concepts mathématiques.",
+        colorName: "red",
+      },
+      {
+        icon: "E",
+        text: "Exercices d'écriture",
+        subtext: "Pratique du traçage des lettres et des chiffres.",
+        colorName: "yellow",
+      },
+    ],
+    image: "/feature-practice-exercise.png",
+    alt: "Exercices interactifs",
+  },
+  {
+    id: "evaluer",
+    title: "Suivi des progrès",
+    description: "Des outils complets pour mesurer et visualiser l'évolution:",
+    items: [
+      {
+        icon: BarChart2,
+        text: "Profils personnalisés",
+        subtext: "Suivi individuel pour chaque enfant utilisant l'application.",
+        colorName: "purple",
+      },
+      {
+        icon: Star,
+        text: "Statistiques détaillées",
+        subtext:
+          "Visualisation des forces et des points à améliorer par matière.",
+        colorName: "green",
+      },
+      {
+        icon: Award,
+        text: "Récompenses et badges",
+        subtext: "Système de motivation pour encourager la persévérance.",
+        colorName: "yellow",
+      },
+    ],
+    image: "/feature-progress-tracking.png",
+    alt: "Suivi des progrès",
+  },
+  {
+    id: "jouer",
+    title: "Jeux éducatifs",
+    description: "Apprendre tout en s'amusant avec des jeux captivants:",
+    items: [
+      {
+        icon: "T",
+        text: "Tic-tac-toe Éducatif",
+        subtext: "Jeu de morpion adapté avec questions éducatives.",
+        colorName: "blue",
+      },
+      {
+        icon: "S",
+        text: "Snake & Lettres",
+        subtext:
+          "Version éducative du jeu classique pour apprendre l'alphabet.",
+        colorName: "green",
+      },
+      {
+        icon: "P",
+        text: "Puzzles de Mots",
+        subtext: "Reconstituer des mots à partir de lettres mélangées.",
+        colorName: "red",
+      },
+    ],
+    image: "/feature-game-example.png",
+    alt: "Jeux éducatifs",
+  },
+];
+
+// Helper component to render feature icons consistently
+const FeatureIcon = ({ icon, colorName }) => {
+  // Define base Tailwind classes for icon container background and text color
+  const colorStyles = {
+    purple: {
+      bg: "bg-purple-200 dark:bg-purple-800",
+      text: "text-purple-800 dark:text-purple-200",
+    },
+    orange: {
+      bg: "bg-orange-200 dark:bg-orange-800",
+      text: "text-orange-800 dark:text-orange-200",
+    },
+    green: {
+      bg: "bg-green-200 dark:bg-green-800",
+      text: "text-green-800 dark:text-green-200",
+    },
+    blue: {
+      bg: "bg-blue-200 dark:bg-blue-800",
+      text: "text-blue-800 dark:text-blue-200",
+    },
+    red: {
+      bg: "bg-red-200 dark:bg-red-800",
+      text: "text-red-800 dark:text-red-200",
+    },
+    yellow: {
+      bg: "bg-yellow-200 dark:bg-yellow-800",
+      text: "text-yellow-800 dark:text-yellow-200",
+    },
+  };
+
+  const currentStyle = colorStyles[colorName] || {
+    bg: "bg-gray-200 dark:bg-gray-800",
+    text: "text-gray-800 dark:text-gray-200",
+  };
+  const iconContainerClass = `flex-shrink-0 h-6 w-6 rounded-full ${currentStyle.bg} flex items-center justify-center mt-0.5 mr-3`;
+
+  // If icon is a string (letter)
+  if (typeof icon === "string") {
+    return (
+      <div className={iconContainerClass}>
+        <span className={`text-xs font-bold ${currentStyle.text}`}>{icon}</span>
+      </div>
+    );
+  }
+
+  // If icon is a React component type (e.g., BarChart2 for Evaluer)
+  if (typeof icon === "function") {
+    const IconComponent = icon;
+    return (
+      <div className={iconContainerClass}>
+        <IconComponent size={12} className={currentStyle.text} />
+      </div>
+    );
+  }
+
+  return null; // Fallback if icon prop is not as expected
+};
+
+// Component for the Phone Mockup
+const PhoneMockup = ({ src, alt, onErrorSrc }) => {
+  return (
+    // Outer frame container
+    <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[450px] w-[220px] shadow-xl">
+      {/* Top notch */}
+      <div className="w-[100px] h-[18px] bg-gray-800 top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2 absolute"></div>
+      {/* Side button (optional decoration) */}
+      <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[124px] rounded-l-lg"></div>
+      <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[178px] rounded-l-lg"></div>
+      {/* Power button (optional decoration) */}
+      <div className="h-[64px] w-[3px] bg-gray-800 absolute -right-[17px] top-[142px] rounded-r-lg"></div>
+      {/* Screen content area */}
+      <div className="rounded-[2rem] overflow-hidden w-full h-full bg-white dark:bg-black">
+        <img
+          src={src}
+          className="w-full h-full object-cover"
+          alt={alt}
+          onError={(e) => {
+            e.target.onerror = null;
+            // Use the function if provided, otherwise generate a default placeholder
+            const placeholderSrc =
+              typeof onErrorSrc === "function" ? onErrorSrc() : onErrorSrc;
+            e.target.src =
+              placeholderSrc ||
+              `https://placehold.co/220x450/1F2937/E9D5FF?text=${alt.replace(
+                /\s/g,
+                "+"
+              )}`;
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Main App Component
 const App = () => {
-  const [activeTab, setActiveTab] = useState('apprendre');
+  // State variables
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const carouselRef = useRef(null);
+  const [currentTestimonialSlide, setCurrentTestimonialSlide] = useState(0);
+  const totalTestimonialSlides = 3;
+  const [currentFeatureSlideIndex, setCurrentFeatureSlideIndex] = useState(0);
 
+  // Effect to handle header background change on scroll
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 10);
     };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Effect for auto-scrolling the testimonial carousel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonialSlide((prev) => (prev + 1) % totalTestimonialSlides);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [totalTestimonialSlides]);
+
+  // Effect for auto-scrolling the features slideshow
+  useEffect(() => {
+    const featureInterval = setInterval(() => {
+      setCurrentFeatureSlideIndex(
+        (prevIndex) => (prevIndex + 1) % featuresSlidesData.length
+      );
+    }, 5000); // Change feature slide every 5 seconds
+    return () => clearInterval(featureInterval);
+  }, []);
+
+  // Effect to toggle dark mode class
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  // Function to smoothly scroll to a section
+  const scrollToSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setMobileMenuOpen(false);
+  };
+
+  // Function to toggle FAQ item
+  const toggleFaq = (index) => {
+    setExpandedFaq(expandedFaq === index ? null : index);
+  };
+
+  // FAQ data
+  const faqData = [
+    {
+      question: "Qu'est-ce que Le Petit DaVinci ?",
+      answer:
+        "C'est une application éducative conçue pour aider les enfants à apprendre le français, l'anglais et les mathématiques de manière ludique et interactive.",
+    },
+    {
+      question: "Pour quelle tranche d'âge l'application est-elle adaptée ?",
+      answer:
+        "L'application est principalement destinée aux enfants en âge préscolaire et primaire (environ 3 à 8 ans).",
+    },
+    {
+      question: "L'application est-elle disponible sur iOS et Android ?",
+      answer:
+        "Oui, Le Petit DaVinci est disponible au téléchargement sur l'App Store et le Google Play Store.",
+    },
+    {
+      question: "Comment puis-je suivre les progrès de mon enfant ?",
+      answer:
+        "L'application comprend une section dédiée aux parents où vous pouvez consulter des statistiques détaillées sur les activités et les progrès de votre enfant.",
+    },
+  ];
+
+  // Testimonial data
+  const testimonials = [
+    {
+      name: "Sophie Dubois",
+      role: "Maman de Léo (6 ans)",
+      text: "Mon fils adore apprendre avec Le Petit DaVinci ! Les jeux sont amusants et il progresse vite en lecture.",
+      image: "/testimonial-avatar-1.png",
+      alt: "Avatar Sophie Dubois",
+    },
+    {
+      name: "Ahmed Khan",
+      role: "Papa de Yasmin (4 ans)",
+      text: "Une application fantastique pour introduire les chiffres et les lettres. Très intuitive pour les petits.",
+      image: "/testimonial-avatar-2.png",
+      alt: "Avatar Ahmed Khan",
+    },
+    {
+      name: "Claire Moreau",
+      role: "Enseignante en maternelle",
+      text: "J'utilise Le Petit DaVinci en classe. C'est un excellent outil complémentaire, coloré et pédagogique.",
+      image: "/testimonial-avatar-3.png",
+      alt: "Avatar Claire Moreau",
+    },
+  ];
+
+  // Current feature slide based on index
+  const currentFeature = featuresSlidesData[currentFeatureSlideIndex];
+
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-purple-50 to-purple-100 text-gray-800 font-sans">
+    <div
+      className={`flex flex-col items-center min-h-screen ${
+        darkMode
+          ? "dark bg-gray-900 text-gray-100"
+          : "bg-gradient-to-b from-purple-50 to-purple-100 text-gray-800" // Base text color for light mode
+      } font-sans transition-colors duration-300 overflow-x-hidden`}
+    >
       {/* Header/Navigation */}
-      <header className={`w-full px-6 py-4 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'} fixed top-0 z-50`}>
+      <header
+        className={`w-full px-4 sm:px-6 py-4 transition-all duration-300 ${
+          isScrolled
+            ? darkMode
+              ? "bg-gray-800 shadow-md"
+              : "bg-white shadow-md"
+            : "bg-transparent"
+        } fixed top-0 z-50`}
+      >
         <div className="container mx-auto flex justify-between items-center">
+          {/* Logo and Brand Name */}
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-purple-400 flex items-center justify-center text-white font-bold mr-2">LD</div>
-            <span className="text-xl font-bold text-purple-600">Le Petit DaVinci</span>
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: 0 }}
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-purple-400 flex items-center justify-center text-white font-bold mr-2 text-sm sm:text-base"
+            >
+              LD
+            </motion.div>
+            <span className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-400">
+              Le Petit DaVinci
+            </span>
           </div>
-          <nav className="hidden md:flex space-x-8">
-            <a href="#fonctionnalites" className="text-gray-700 hover:text-purple-600 transition-colors">Fonctionnalités</a>
-            <a href="#avantages" className="text-gray-700 hover:text-purple-600 transition-colors">Avantages</a>
-            <a href="#avis" className="text-gray-700 hover:text-purple-600 transition-colors">Témoignages</a>
-            <a href="#faq" className="text-gray-700 hover:text-purple-600 transition-colors">FAQ</a>
+
+          {/* Desktop Navigation - UPDATED TEXT COLOR */}
+          <nav className="hidden md:flex space-x-6 lg:space-x-8">
+            <button
+              onClick={() => scrollToSection("fonctionnalites")}
+              className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Fonctionnalités
+            </button>
+            <button
+              onClick={() => scrollToSection("avantages")}
+              className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Avantages
+            </button>
+            <button
+              onClick={() => scrollToSection("avis")}
+              className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Témoignages
+            </button>
+            <button
+              onClick={() => scrollToSection("faq")}
+              className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              FAQ
+            </button>
           </nav>
-          <div>
-            <button className="bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-700 transition-colors shadow-md">Télécharger</button>
+
+          {/* Action Buttons & Mobile Menu Toggle */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button className="hidden md:block bg-purple-600 text-white px-5 py-2 rounded-full hover:bg-purple-700 transition-colors shadow-md text-sm">
+              Télécharger
+            </button>
+            <button
+              className="md:hidden p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
       </header>
 
+      {/* Mobile Menu - UPDATED TEXT COLOR */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-16 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg z-40 p-4 md:hidden"
+          >
+            <div className="flex flex-col space-y-4">
+              <button
+                onClick={() => scrollToSection("fonctionnalites")}
+                className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 text-left"
+              >
+                Fonctionnalités
+              </button>
+              <button
+                onClick={() => scrollToSection("avantages")}
+                className="text-gray-900 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 text-left"
+              >
+                Avantages
+              </button>
+              <button
+                onClick={() => scrollToSection("avis")}
+                className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 text-left"
+              >
+                Témoignages
+              </button>
+              <button
+                onClick={() => scrollToSection("faq")}
+                className="text-gray-800 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 text-left"
+              >
+                FAQ
+              </button>
+              <button className="w-full bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-700 transition-colors shadow-md mt-2">
+                Télécharger
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
-      <section className="w-full pt-32 pb-16 px-6">
+      <section className="w-full pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="container mx-auto flex flex-col md:flex-row items-center">
-          <div className="md:w-1/2 md:pr-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-purple-800">
+          {/* Hero Text Content */}
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="md:w-1/2 md:pr-12 text-center md:text-left"
+          >
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6 text-purple-800 dark:text-purple-400">
               Le Petit DaVinci, <br />
               <span className="text-orange-500">Apprendre en s'amusant !</span>
             </h1>
-            <p className="text-lg mb-8 text-gray-600">
-              Une application éducative complète qui transforme l'apprentissage en aventure ludique. 
-              Explorez le français, l'anglais et les mathématiques à travers des jeux interactifs et des leçons captivantes.
+            {/* UPDATED PARAGRAPH TEXT COLOR */}
+            <p className="text-lg mb-8 text-gray-700 dark:text-gray-300">
+              {" "}
+              Une application éducative complète qui transforme l'apprentissage
+              en aventure ludique. Explorez le français, l'anglais et les
+              mathématiques à travers des jeux interactifs et des leçons
+              captivantes.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-purple-600 text-white px-8 py-3 rounded-full hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-purple-600 text-white px-6 py-3 sm:px-8 sm:py-3 rounded-full hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center text-sm sm:text-base"
+              >
                 <Download size={20} className="mr-2" />
                 Télécharger l'application
-              </button>
-              <button className="bg-white text-purple-600 border border-purple-600 px-8 py-3 rounded-full hover:bg-purple-50 transition-colors shadow-md flex items-center justify-center">
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => scrollToSection("fonctionnalites")}
+                className="bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 border border-purple-600 dark:border-purple-400 px-6 py-3 sm:px-8 sm:py-3 rounded-full hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors shadow-md flex items-center justify-center text-sm sm:text-base"
+              >
                 En savoir plus
                 <ChevronRight size={20} className="ml-1" />
-              </button>
+              </motion.button>
             </div>
-            <div className="mt-8 flex items-center">
+            <div className="mt-8 flex items-center justify-center md:justify-start">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} fill="#FBBF24" color="#FBBF24" />
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * i, duration: 0.5 }}
+                  >
+                    <Star size={20} fill="#FBBF24" color="#FBBF24" />
+                  </motion.div>
                 ))}
               </div>
-              <span className="ml-2 text-gray-600">Plus de 500 téléchargements</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+                {" "}
+                {/* Kept gray-600 here as it's less prominent */}
+                Plus de 500 téléchargements
+              </span>
             </div>
-          </div>
-          <div className="md:w-1/2 mt-12 md:mt-0 flex justify-center">
-            <div className="relative w-64 h-96">
-              {/* Phone frame with app screenshot */}
-              <div className="absolute inset-0 bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border-8 border-gray-800">
-                <img src="/Capture d'écran 2025-05-11 202942.png" alt="Le Petit DaVinci App" className="w-full h-full object-cover" />
-              </div>
-              {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 bg-purple-100 rounded-lg p-2 shadow-md rotate-6">
-                <Book size={24} className="text-purple-600" />
-              </div>
-              <div className="absolute -bottom-4 -left-4 bg-orange-100 rounded-lg p-2 shadow-md -rotate-6">
+          </motion.div>
+
+          {/* Hero Image/Phone Mockup */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="md:w-1/2 mt-12 md:mt-0 flex justify-center items-center"
+          >
+            <div className="relative">
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 4,
+                  ease: "easeInOut",
+                }}
+              >
+                <PhoneMockup
+                  src="/hero-app-screenshot.png"
+                  alt="Le Petit DaVinci App"
+                  onErrorSrc="https://placehold.co/220x450/1F2937/E9D5FF?text=App+Screenshot"
+                />
+              </motion.div>
+              <motion.div
+                animate={{ rotate: [0, 10, 0, -10, 0] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 5,
+                  ease: "easeInOut",
+                }}
+                className="absolute -top-4 -right-4 bg-purple-100 dark:bg-purple-900 rounded-lg p-2 shadow-md rotate-6 z-10"
+              >
+                <Book
+                  size={24}
+                  className="text-purple-600 dark:text-purple-400"
+                />
+              </motion.div>
+              <motion.div
+                animate={{ rotate: [0, -10, 0, 10, 0] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 5,
+                  ease: "easeInOut",
+                  delay: 0.5,
+                }}
+                className="absolute -bottom-4 -left-4 bg-orange-100 dark:bg-orange-900 rounded-lg p-2 shadow-md -rotate-6 z-10"
+              >
                 <Gamepad size={24} className="text-orange-500" />
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="fonctionnalites" className="w-full py-16 px-6 bg-white">
+      <section
+        id="fonctionnalites"
+        className="w-full py-16 px-4 sm:px-6 bg-white dark:bg-gray-800 scroll-mt-16"
+      >
         <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-purple-800 mb-4">Une approche complète de l'apprentissage</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Le Petit DaVinci propose quatre piliers pédagogiques pour un apprentissage efficace et engageant
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-purple-800 dark:text-purple-400 mb-4">
+              Une approche complète de l'apprentissage
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Le Petit DaVinci propose quatre piliers pédagogiques pour un
+              apprentissage efficace et engageant. Découvrez-les !
             </p>
-          </div>
+          </motion.div>
 
-          {/* Feature tabs */}
-          <div className="mb-10">
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              <button 
-                onClick={() => setActiveTab('apprendre')} 
-                className={`px-6 py-3 rounded-full ${activeTab === 'apprendre' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          {/* Slideshow Content Area */}
+          <div className="bg-purple-50 dark:bg-gray-700 p-6 md:p-10 rounded-3xl max-w-5xl mx-auto shadow-inner min-h-[550px] flex items-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentFeature.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col md:flex-row items-center gap-8 w-full"
               >
-                Apprendre
-              </button>
-              <button 
-                onClick={() => setActiveTab('pratiquer')} 
-                className={`px-6 py-3 rounded-full ${activeTab === 'pratiquer' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-              >
-                Pratiquer
-              </button>
-              <button 
-                onClick={() => setActiveTab('evaluer')} 
-                className={`px-6 py-3 rounded-full ${activeTab === 'evaluer' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-              >
-                Évaluer
-              </button>
-              <button 
-                onClick={() => setActiveTab('jouer')} 
-                className={`px-6 py-3 rounded-full ${activeTab === 'jouer' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-              >
-                Jouer
-              </button>
-            </div>
-
-            {/* Feature content */}
-            <div className="bg-purple-50 p-6 md:p-10 rounded-3xl max-w-5xl mx-auto">
-              {activeTab === 'apprendre' && (
-                <div className="flex flex-col md:flex-row items-center">
-                  <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
-                    <h3 className="text-2xl font-bold text-purple-800 mb-4">Modules d'apprentissage interactifs</h3>
-                    <p className="text-gray-600 mb-4">
-                      Des leçons structurées pour acquérir des connaissances fondamentales en:
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-purple-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-purple-800 font-bold">A</span>
-                        </div>
+                {/* Textual Content */}
+                <div className="md:w-1/2">
+                  <h3 className="text-2xl font-bold text-purple-800 dark:text-purple-400 mb-4">
+                    {currentFeature.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    {currentFeature.description}
+                  </p>
+                  <ul className="space-y-3">
+                    {currentFeature.items.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <FeatureIcon
+                          icon={item.icon}
+                          colorName={item.colorName}
+                        />
                         <div>
-                          <span className="font-medium">Alphabet et prononciation</span>
-                          <p className="text-sm text-gray-500">Apprentissage des lettres avec sons et animations</p>
+                          <span className="font-medium text-gray-800 dark:text-gray-100">
+                            {item.text}
+                          </span>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {item.subtext}
+                          </p>
                         </div>
                       </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-orange-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-orange-800 font-bold">V</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Vocabulaire thématique</span>
-                          <p className="text-sm text-gray-500">Acquisition de vocabulaire par thèmes</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-green-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-green-800 font-bold">M</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Mathématiques</span>
-                          <p className="text-sm text-gray-500">Opérations de base, comptage et reconnaissance des formes</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="md:w-1/2 flex justify-center">
-                    <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="/Capture d'écran 2025-05-11 202956.png" alt="Module d'apprentissage" className="w-full h-full object-cover" />
-                    </div>
-                  </div>
+                    ))}
+                  </ul>
                 </div>
-              )}
-
-              {activeTab === 'pratiquer' && (
-                <div className="flex flex-col md:flex-row items-center">
-                  <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
-                    <h3 className="text-2xl font-bold text-purple-800 mb-4">Exercices interactifs</h3>
-                    <p className="text-gray-600 mb-4">
-                      Renforcez les connaissances avec des exercices engageants:
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-blue-800 font-bold">D</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Dictées interactives</span>
-                          <p className="text-sm text-gray-500">Exercices audio de dictée avec assistance</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-red-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-red-800 font-bold">A</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Association d'images</span>
-                          <p className="text-sm text-gray-500">Association d'images avec mots ou concepts</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-yellow-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-yellow-800 font-bold">E</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Exercices d'écriture</span>
-                          <p className="text-sm text-gray-500">Pratique de l'écriture et du vocabulaire</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="md:w-1/2 flex justify-center">
-                    <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="/Capture d'écran 2025-05-11 203034.png" alt="Exercices interactifs" className="w-full h-full object-cover" />
-                    </div>
-                  </div>
+                {/* Image Content - USING PhoneMockup Component */}
+                <div className="md:w-1/2 flex justify-center items-center mt-8 md:mt-0">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                  >
+                    <PhoneMockup
+                      src={currentFeature.image}
+                      alt={currentFeature.alt}
+                      onErrorSrc={() => {
+                        // Function to generate dynamic placeholder URL
+                        const placeholderText = currentFeature.alt.replace(
+                          /\s/g,
+                          "+"
+                        );
+                        let bgColor = "E9D5FF"; // default purple-ish
+                        if (currentFeature.id === "pratiquer")
+                          bgColor = "DBEAFE"; // blue-ish
+                        else if (currentFeature.id === "evaluer")
+                          bgColor = "D1FAE5"; // green-ish
+                        else if (currentFeature.id === "jouer")
+                          bgColor = "FEE2E2"; // red-ish
+                        return `https://placehold.co/220x450/${bgColor}/4C1D95?text=${placeholderText}`;
+                      }}
+                    />
+                  </motion.div>
                 </div>
-              )}
-
-              {activeTab === 'evaluer' && (
-                <div className="flex flex-col md:flex-row items-center">
-                  <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
-                    <h3 className="text-2xl font-bold text-purple-800 mb-4">Suivi des progrès</h3>
-                    <p className="text-gray-600 mb-4">
-                      Des outils complets pour mesurer et visualiser l'évolution:
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-purple-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-purple-800 font-bold">P</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Profils personnalisés</span>
-                          <p className="text-sm text-gray-500">Suivi individuel pour chaque enfant</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-green-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-green-800 font-bold">S</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Statistiques détaillées</span>
-                          <p className="text-sm text-gray-500">Visualisation des forces et des points à améliorer</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-yellow-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-yellow-800 font-bold">R</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Récompenses et badges</span>
-                          <p className="text-sm text-gray-500">Système de motivation et de reconnaissance</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="md:w-1/2 flex justify-center">
-                    <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="/Capture d'écran 2025-05-11 203216.png" alt="Suivi des progrès" className="w-full h-full object-cover" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'jouer' && (
-                <div className="flex flex-col md:flex-row items-center">
-                  <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
-                    <h3 className="text-2xl font-bold text-purple-800 mb-4">Jeux éducatifs</h3>
-                    <p className="text-gray-600 mb-4">
-                      Apprendre tout en s'amusant avec des jeux captivants:
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-blue-800 font-bold">T</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Tic-tac-toe</span>
-                          <p className="text-sm text-gray-500">Jeu adapté avec différents niveaux de difficulté</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-green-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-green-800 font-bold">S</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Snake</span>
-                          <p className="text-sm text-gray-500">Version éducative du jeu classique</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-purple-200 flex items-center justify-center mt-0.5 mr-2">
-                          <span className="text-purple-800 font-bold">E</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Échecs</span>
-                          <p className="text-sm text-gray-500">Introduction aux bases des échecs</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="md:w-1/2 flex justify-center">
-                    <div className="relative w-56 h-80 border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                      <img src="/Capture d'écran 2025-05-11 203246.png" alt="Jeux éducatifs" className="w-full h-full object-cover" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section id="avantages" className="w-full py-16 px-6 bg-gradient-to-b from-purple-50 to-white">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-purple-800 mb-4">Pourquoi choisir Le Petit DaVinci ?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Une approche pédagogique innovante qui transforme l'apprentissage en véritable aventure
+      <section
+        id="avantages"
+        className="w-full py-16 px-4 sm:px-6 bg-purple-50 dark:bg-gray-900 scroll-mt-16"
+      >
+        <div className="container mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-purple-800 dark:text-purple-400 mb-4">
+              Pourquoi choisir Le Petit DaVinci ?
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Découvrez les avantages uniques qui font de notre application le
+              choix idéal pour l'éducation de votre enfant.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                <Book size={24} className="text-purple-600" />
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center"
+            >
+              <div className="mb-4 inline-flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900">
+                <Book
+                  size={24}
+                  className="text-purple-600 dark:text-purple-400"
+                />
               </div>
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Apprentissage multi-sensoriel</h3>
-              <p className="text-gray-600">
-                Stimule tous les sens de l'enfant pour un apprentissage plus efficace et mémorable
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                Apprentissage Ludique
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Transforme les leçons en jeux captivants pour maintenir
+                l'engagement.
               </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                <Gamepad size={24} className="text-orange-500" />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center"
+            >
+              <div className="mb-4 inline-flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900">
+                <BarChart2 size={24} className="text-orange-500" />
               </div>
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Ludification complète</h3>
-              <p className="text-gray-600">
-                Transforme chaque leçon en jeu pour maintenir la motivation et l'engagement
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                Suivi Personnalisé
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Adapte le parcours d'apprentissage au rythme et aux besoins de
+                chaque enfant.
               </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Award size={24} className="text-blue-600" />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center"
+            >
+              <div className="mb-4 inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900">
+                <Award
+                  size={24}
+                  className="text-green-600 dark:text-green-400"
+                />
               </div>
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Système de récompenses</h3>
-              <p className="text-gray-600">
-                Des badges, points et récompenses pour célébrer chaque progrès et encourager l'effort
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                Contenu Sécurisé
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Environnement sans publicité et adapté aux enfants, approuvé par
+                les parents.
               </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <BarChart2 size={24} className="text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Progression adaptative</h3>
-              <p className="text-gray-600">
-                Contenu qui s'adapte au rythme d'apprentissage unique de chaque enfant
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow md:col-span-2">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
-                <Star size={24} className="text-yellow-600" />
-              </div>
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Mascottes interactives</h3>
-              <p className="text-gray-600">
-                Des guides animés (panda, hibou, éléphant) qui accompagnent l'enfant dans son parcours d'apprentissage, offrant encouragement et assistance
-              </p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* App Screenshots */}
-      <section className="w-full py-16 px-6 bg-white">
+      {/* Testimonials Section */}
+      <section
+        id="avis"
+        className="w-full py-16 px-4 sm:px-6 bg-white dark:bg-gray-800 scroll-mt-16"
+      >
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-purple-800 mb-4">Découvrez l'application</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Des interfaces colorées et intuitives conçues pour captiver l'attention des enfants
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-purple-800 dark:text-purple-400 mb-4">
+              Ce que disent nos utilisateurs
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Découvrez pourquoi les parents et les enfants adorent Le Petit
+              DaVinci.
             </p>
-          </div>
-
-          <div className="flex flex-nowrap overflow-x-auto pb-8 gap-6 max-w-5xl mx-auto">
-            {[
-              "/Capture d'écran 2025-05-11 203355.png",
-              "/Capture d'écran 2025-05-11 203526.png",
-              "/Capture d'écran 2025-05-11 203635.png",
-              "/Capture d'écran 2025-05-11 202942.png",
-              "/Capture d'écran 2025-05-11 202956.png"
-            ].map((src, index) => (
-              <div key={index} className="flex-none w-64">
-                <div className="border-8 border-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                  <img src={src} alt={`Screenshot ${index+1}`} className="w-full h-full object-cover" />
-                </div>
-              </div>
+          </motion.div>
+          <div
+            ref={carouselRef}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-purple-50 dark:bg-gray-700 p-6 rounded-xl shadow-md flex flex-col items-center text-center"
+              >
+                <img
+                  src={testimonial.image}
+                  alt={testimonial.alt || testimonial.name}
+                  className="w-20 h-20 rounded-full mb-4 border-4 border-white dark:border-gray-800 shadow-sm object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://placehold.co/80x80/E9D5FF/4C1D95?text=${testimonial.name.charAt(
+                      0
+                    )}`;
+                  }}
+                />
+                <p className="text-gray-600 dark:text-gray-300 italic mb-4">
+                  "{testimonial.text}"
+                </p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  {testimonial.name}
+                </h4>
+                <p className="text-sm text-purple-600 dark:text-purple-400">
+                  {testimonial.role}
+                </p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="avis" className="w-full py-16 px-6 bg-gradient-to-b from-purple-50 to-white">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-purple-800 mb-4">Ce que disent les parents</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Découvrez les expériences des familles qui utilisent déjà Le Petit DaVinci
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-purple-200 rounded-full flex items-center justify-center mr-3">
-                    <span className="font-bold text-purple-800">S</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold">Sophie M.</h4>
-                    <p className="text-sm text-gray-500">Maman de deux enfants</p>
-                  </div>
-                </div>
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill="#FBBF24" color="#FBBF24" />
-                  ))}
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "Mes enfants adorent apprendre avec cette application ! Les jeux sont vraiment amusants et je suis impressionnée par les progrès qu'ils ont faits en si peu de temps."
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
-                    <span className="font-bold text-blue-800">T</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold">Thomas R.</h4>
-                    <p className="text-sm text-gray-500">Papa d'un enfant de 6 ans</p>
-                  </div>
-                </div>
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill="#FBBF24" color="#FBBF24" />
-                  ))}
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "Enfin une application éducative qui maintient l'intérêt de mon fils ! Le suivi des progrès me permet de voir exactement où il excelle et où il a besoin d'aide."
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-green-200 rounded-full flex items-center justify-center mr-3">
-                    <span className="font-bold text-green-800">I</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold">Isabelle L.</h4>
-                    <p className="text-sm text-gray-500">Enseignante en maternelle</p>
-                  </div>
-                </div>
-                <div className="flex">
-                  {[...Array(4)].map((_, i) => (
-                    <Star key={i} size={16} fill="#FBBF24" color="#FBBF24" />
-                  ))}
-                  <Star size={16} color="#FBBF24" />
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "Je recommande cette application à tous les parents de ma classe. Les activités sont parfaitement alignées avec le programme scolaire et offrent un excellent complément à l'apprentissage en classe."
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ Section */}
-      <section id="faq" className="w-full py-16 px-6 bg-white">
+      <section
+        id="faq"
+        className="w-full py-16 px-4 sm:px-6 bg-purple-50 dark:bg-gray-900 scroll-mt-16"
+      >
         <div className="container mx-auto max-w-3xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-purple-800 mb-4">Questions fréquentes</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Tout ce que vous devez savoir sur Le Petit DaVinci
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-purple-800 dark:text-purple-400 mb-4">
+              Questions Fréquemment Posées
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Trouvez des réponses aux questions courantes sur Le Petit DaVinci.
             </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Pour quelle tranche d'âge est conçue l'application ?</h3>
-              <p className="text-gray-600">
-                Le Petit DaVinci est conçu principalement pour les enfants de 4 à 8 ans. Cependant, les différents niveaux de difficulté permettent d'adapter l'expérience à chaque enfant.
-              </p>
-            </div>
-
-            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-bold text-purple-800 mb-2">L'application fonctionne-t-elle hors ligne ?</h3>
-              <p className="text-gray-600">
-                Oui, une fois téléchargée, l'application fonctionne entièrement hors ligne. Ainsi, vos enfants peuvent apprendre n'importe où, même sans connexion internet.
-              </p>
-            </div>
-
-            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Comment suivre les progrès de mon enfant ?</h3>
-              <p className="text-gray-600">
-                L'application offre un tableau de bord parental détaillé qui vous permet de suivre le temps passé, les activités réalisées, les points forts et les domaines à améliorer pour chaque enfant.
-              </p>
-            </div>
-
-            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-bold text-purple-800 mb-2">Y a-t-il des achats intégrés dans l'application ?</h3>
-              <p className="text-gray-600">
-                Le Petit DaVinci propose une version gratuite avec un accès limité aux fonctionnalités, et une version premium avec un accès complet à tous les modules. Il n'y a pas de publicités ni d'achats récurrents cachés.
-              </p>
-            </div>
+          </motion.div>
+          <div className="space-y-4">
+            {faqData.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden"
+              >
+                <button
+                  onClick={() => toggleFaq(index)}
+                  className="w-full flex justify-between items-center p-4 sm:p-5 text-left text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <span className="font-medium">{item.question}</span>
+                  <motion.div
+                    animate={{ rotate: expandedFaq === index ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown
+                      size={20}
+                      className="text-purple-600 dark:text-purple-400"
+                    />
+                  </motion.div>
+                </button>
+                <AnimatePresence>
+                  {expandedFaq === index && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <p className="p-4 sm:p-5 pt-0 text-gray-600 dark:text-gray-300">
+                        {item.answer}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="w-full py-20 px-6 bg-gradient-to-r from-purple-500 to-purple-700 text-white">
-        <div className="container mx-auto text-center max-w-3xl">
-          <h2 className="text-3xl font-bold mb-6">Prêt à transformer l'apprentissage en aventure ?</h2>
-          <p className="text-lg mb-8 text-purple-100">
-            Téléchargez Le Petit DaVinci dès aujourd'hui et offrez à votre enfant une expérience d'apprentissage unique et captivante.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-white text-purple-600 px-8 py-4 rounded-full hover:bg-purple-50 transition-colors shadow-lg flex items-center justify-center">
+      {/* Call to Action (Footer) Section */}
+      <section className="w-full py-16 px-4 sm:px-6 bg-purple-600 text-white">
+        <div className="container mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-bold mb-4">
+              Prêt à commencer l'aventure ?
+            </h2>
+            <p className="text-purple-100 mb-8 max-w-xl mx-auto">
+              Téléchargez Le Petit DaVinci dès aujourd'hui et offrez à votre
+              enfant le cadeau de l'apprentissage amusant !
+            </p>
+            <motion.button
+              whileHover={{
+                scale: 1.05,
+                backgroundColor: "#ffffff",
+                color: "#7C3AED", // This is purple-600
+              }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center justify-center mx-auto"
+            >
               <Download size={20} className="mr-2" />
-              Télécharger sur l'App Store
-            </button>
-            <button className="bg-purple-800 text-white px-8 py-4 rounded-full hover:bg-purple-900 transition-colors border border-purple-400 shadow-lg flex items-center justify-center">
-              <Download size={20} className="mr-2" />
-              Disponible sur Google Play
-            </button>
-          </div>
-
-          <div className="mt-12 flex justify-center items-center">
-            <div className="bg-purple-600 p-4 rounded-xl max-w-lg">
-              <p className="font-medium text-purple-100">
-                "Le Petit DaVinci a transformé le temps d'écran de mes enfants en moments d'apprentissage précieux."
-              </p>
-              <p className="mt-2 text-purple-200 text-sm font-bold">
-                — Marie C., maman de trois enfants
-              </p>
-            </div>
-          </div>
+              Télécharger Maintenant
+            </motion.button>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="w-full py-12 px-6 bg-gray-900 text-white">
-        <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between">
-            <div className="mb-8 md:mb-0">
-              <div className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold mr-2">LD</div>
-                <span className="text-xl font-bold">Le Petit DaVinci</span>
-              </div>
-              <p className="mt-4 text-gray-400 max-w-md">
-                Une application éducative innovante qui combine apprentissage structuré et divertissement pour les enfants francophones.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-              <div>
-                <h4 className="text-lg font-bold mb-4">Application</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Fonctionnalités</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Télécharger</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Témoignages</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-bold mb-4">Entreprise</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">À propos</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Carrières</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-bold mb-4">Légal</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Confidentialité</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Conditions d'utilisation</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Cookies</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-500 text-sm">
-              © 2025 Le Petit DaVinci. Tous droits réservés.
-            </p>
-            <div className="flex space-x-4 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <span className="sr-only">Facebook</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <span className="sr-only">Instagram</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <span className="sr-only">Twitter</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
-              </a>
-            </div>
+      <footer className="w-full py-8 px-4 sm:px-6 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+        <div className="container mx-auto text-center text-sm">
+          <p>
+            &copy; {new Date().getFullYear()} Le Petit DaVinci. Tous droits
+            réservés.
+          </p>
+          <div className="flex justify-center space-x-4 mt-4">
+            <a
+              href="#"
+              className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Politique de confidentialité
+            </a>
+            <a
+              href="#"
+              className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Conditions d'utilisation
+            </a>
           </div>
         </div>
       </footer>
